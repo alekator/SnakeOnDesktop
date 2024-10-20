@@ -52,5 +52,11 @@ namespace SnakeOnDesktop
             // Выводим координаты головы в консоль
             Console.WriteLine($"Координаты головы: {newHead.X}, {newHead.Y}");
         }
+        public void Grow()
+        {
+            // Добавляем новый сегмент в тело змейки
+            Point lastSegment = Body[Body.Count - 1];
+            Body.Add(lastSegment);
+        }
     }
 }
