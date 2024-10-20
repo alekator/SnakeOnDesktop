@@ -15,6 +15,7 @@ namespace SnakeOnDesktop
         private string[] desktopFolders;
         private int score;
         private Random random;
+        private Font scoreFont;
 
         public Form1()
         {
@@ -48,6 +49,7 @@ namespace SnakeOnDesktop
             gameTimer.Tick += GameTimer_Tick; // Привязка события для обновления игры
             gameTimer.Start();
             score = 0; // Начальный счёт
+            scoreFont = new Font("Arial", 24, FontStyle.Bold); // Инициализация шрифта для счета
         }
 
         private void MinimizeAllWindows()
@@ -173,8 +175,13 @@ namespace SnakeOnDesktop
             foreach (Point segment in snake.Body)
             {
                 g.FillRectangle(Brushes.Green, new Rectangle(segment.X, segment.Y, 10, 10)); // Рисуем каждый сегмент змейки
-                Console.WriteLine($"Сегмент на позиции: {segment}"); // Отладочное сообщение
             }
+
+            // Отрисовка счета
+            string scoreText = $"Счет: {score}";
+            SizeF textSize = g.MeasureString(scoreText, scoreFont);
+            PointF textPosition = new PointF((this.ClientSize.Width - textSize.Width) / 2, 10); // Центрируем текст по горизонтали
+            g.DrawString(scoreText, scoreFont, Brushes.White, textPosition); // Отрисовка счета
         }
 
 
@@ -253,8 +260,10 @@ namespace SnakeOnDesktop
             // Добавляем новую голову и удаляем хвост
             Body.Insert(0, newHead);
             Body.RemoveAt(Body.Count - 1);
-        }
 
+            // Выводим координаты головы в консоль
+            Console.WriteLine($"Координаты головы: {newHead.X}, {newHead.Y}");
+        }
     }
 
     // Перечисление для направления движения
