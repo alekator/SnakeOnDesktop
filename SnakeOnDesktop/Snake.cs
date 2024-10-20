@@ -45,14 +45,6 @@ namespace SnakeOnDesktop
                     newHead.X += 10; // Движение вправо
                     break;
             }
-
-            // Проверка, выходят ли координаты за границы
-            if (newHead.X < 0 || newHead.X >= Screen.PrimaryScreen.Bounds.Width ||
-                newHead.Y < 0 || newHead.Y >= Screen.PrimaryScreen.Bounds.Height)
-            {
-                Console.WriteLine("Змейка вышла за пределы экрана!");
-            }
-
             // Добавляем новую голову и удаляем хвост
             Body.Insert(0, newHead);
             Body.RemoveAt(Body.Count - 1);
