@@ -44,7 +44,7 @@
             this.WindowState = System.Windows.Forms.FormWindowState.Maximized;
             this.ResumeLayout(false);
             this.Paint += new System.Windows.Forms.PaintEventHandler(this.Form1_Paint);
-
+            this.KeyPreview = true; // Обрабатывает нажатия клавиш на уровне формы
         }
 
         #endregion

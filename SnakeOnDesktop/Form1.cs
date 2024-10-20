@@ -12,11 +12,12 @@ namespace SnakeOnDesktop
     {
         private Timer gameTimer;
         private Snake snake;
-        private string[] desktopFolders;
+        private List<Desktop.DesktopObject> foodObjects; // Список подходящих объектов для еды
         private int score;
         private Random random;
         private Font scoreFont;
-
+        private Point foodPosition; // Позиция еды
+        private Desktop desktop; // Объявите переменную desktop
         public Form1()
         {
             InitializeComponent();
@@ -29,20 +30,46 @@ namespace SnakeOnDesktop
             this.BackColor = Color.Black; // Цвет фона (можно изменить)
             this.TransparencyKey = this.BackColor; // Делаем фон прозрачным
             this.Paint += new System.Windows.Forms.PaintEventHandler(this.Form1_Paint);
+
+            this.KeyDown += new KeyEventHandler(Form1_KeyDown); // Добавляем обработчик нажатий клавиш
+
             MinimizeAllWindows(); // Сворачиваем все окна при запуске
         }
-
+        private void Form1_KeyDown(object sender, KeyEventArgs e)
+        {
+            // Обрабатываем клавиши стрелок для изменения направления
+            switch (e.KeyCode)
+            {
+                case Keys.Up:
+                    if (snake.CurrentDirection != Direction.Down) // Чтобы змейка не могла развернуться на 180 градусов
+                        snake.CurrentDirection = Direction.Up;
+                    break;
+                case Keys.Down:
+                    if (snake.CurrentDirection != Direction.Up)
+                        snake.CurrentDirection = Direction.Down;
+                    break;
+                case Keys.Left:
+                    if (snake.CurrentDirection != Direction.Right)
+                        snake.CurrentDirection = Direction.Left;
+                    break;
+                case Keys.Right:
+                    if (snake.CurrentDirection != Direction.Left)
+                        snake.CurrentDirection = Direction.Right;
+                    break;
+            }
+        }
 
         private void InitializeGame()
         {
-            // Загрузка списка папок на рабочем столе
-            string desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
-            desktopFolders = Directory.GetDirectories(desktopPath);
+            desktop = new Desktop();
+            foodObjects = new List<Desktop.DesktopObject>(); // Инициализация списка объектов для еды
+
+            // Сканируем объекты на рабочем столе и фильтруем их
+            FilterFoodObjects();
 
             // Инициализация змейки
             snake = new Snake();
             random = new Random();
-
             // Настройка таймера игры
             gameTimer = new Timer();
             gameTimer.Interval = 100; // Интервал обновления игры в миллисекундах
@@ -50,6 +77,61 @@ namespace SnakeOnDesktop
             gameTimer.Start();
             score = 0; // Начальный счёт
             scoreFont = new Font("Arial", 24, FontStyle.Bold); // Инициализация шрифта для счета
+
+            GenerateFood(); // Генерация начальной еды
+        }
+
+        private void FilterFoodObjects()
+        {
+            List<Desktop.DesktopObject> desktopObjects = desktop.ScanDesktop();
+
+            // Фильтруем объекты, чтобы оставить только те, которые могут быть едой
+            foodObjects = desktopObjects
+                .Where(obj => obj.Bounds.Width > 0 && obj.Bounds.Height > 0)
+                .GroupBy(obj => new { obj.Bounds.X, obj.Bounds.Y, obj.Bounds.Width, obj.Bounds.Height }) // Группируем по координатам и размеру
+                .Select(group => group.First()) // Выбираем только один объект из группы повторяющихся
+                .ToList();
+
+            // Логирование объектов для проверки
+            foreach (var obj in foodObjects)
+            {
+                Console.WriteLine($"Объект для еды: {obj.Title}, Позиция: {obj.Bounds}");
+            }
+        }
+
+
+        private void GenerateFood()
+        {
+            // Проверка, есть ли доступные объекты для еды
+            if (foodObjects.Count > 0)
+            {
+                // Выбираем случайный объект
+                Desktop.DesktopObject randomObject = foodObjects[random.Next(foodObjects.Count)];
+
+                // Устанавливаем позицию еды в случайный объект
+                foodPosition = new Point(randomObject.Bounds.Left, randomObject.Bounds.Top);
+
+                // Скрываем выбранный объект
+                HideDesktopObject(randomObject);
+            }
+            else
+            {
+                Console.WriteLine("Объектов нет для еды"); // Отладочное сообщение
+                // Если объектов нет, генерируем случайные координаты
+                int maxX = (this.ClientSize.Width / 10) * 10;
+                int maxY = (this.ClientSize.Height / 10) * 10;
+                foodPosition = new Point(random.Next(0, maxX / 10) * 10, random.Next(0, maxY / 10) * 10);
+            }
+        }
+
+        private void HideDesktopObject(Desktop.DesktopObject desktopObject)
+        {
+            // Скрыть объект на рабочем столе, если это возможно
+            IntPtr hwnd = FindWindow(null, desktopObject.Title);
+            if (hwnd != IntPtr.Zero)
+            {
+                ShowWindow(hwnd, SW_HIDE); // Скрываем объект
+            }
         }
 
         private void MinimizeAllWindows()
@@ -67,20 +149,29 @@ namespace SnakeOnDesktop
             Console.WriteLine("Обновление игры"); // Отладочное сообщение
         }
 
-
         private void CheckForFood()
         {
-            foreach (var folder in desktopFolders)
+            // Проверяем, если голова змейки на позиции еды
+            if (snake.Body[0] == foodPosition) // Если голова змейки на еде
             {
-                // Получаем реальные координаты папки
-                Point folderPosition = GetFolderPosition(folder);
-                if (snake.Body[0] == folderPosition) // Если голова змейки на папке
+                // Получаем последний сегмент (хвост) и добавляем его в конец тела
+                Point lastSegment = snake.Body[snake.Body.Count - 1]; // Хвост
+                snake.Body.Add(lastSegment); // Добавляем новый сегмент в конец
+                score++; // Увеличиваем счёт
+                Console.WriteLine($"Еда съедена! Текущий счёт: {score}"); // Для теста выводим сообщение
+
+                // Проверка, были ли съедены все объекты
+                if (foodObjects.Count > 0)
                 {
-                    snake.Body.Add(snake.Body.Last()); // Увеличиваем тело змейки
-                    score++; // Увеличиваем счёт
-                    Console.WriteLine($"Папка {folder} съедена! Текущий счёт: {score}"); // Для теста выводим сообщение
-                    // Логика удаления/обновления "съеденной" папки (пока не реализована)
+                    GenerateFood(); // Генерируем новую еду
                 }
+                else
+                {
+                    GameOver(); // Конец игры, если все объекты съедены
+                }
+
+                // Увеличиваем скорость игры
+                gameTimer.Interval = Math.Max(10, gameTimer.Interval - 5); // Увеличиваем скорость, уменьшая интервал
             }
         }
 
@@ -138,6 +229,7 @@ namespace SnakeOnDesktop
         // Методы и структуры для работы с Windows API
         private const string SHELLDLL_DEFVIEW = "SHELLDLL_DefView";
         private const string PROGMAN = "Progman";
+        private const int SW_HIDE = 0; // Код для скрытия окна
         private const int SW_MINIMIZE = 2; // Код для сворачивания окна
 
         [DllImport("user32.dll", SetLastError = true)]
@@ -166,112 +258,38 @@ namespace SnakeOnDesktop
         }
 
         // Метод для отрисовки змейки на форме
+        // Метод для отрисовки змейки на форме
+        // Метод для отрисовки змейки на форме
         private void Form1_Paint(object sender, PaintEventArgs e)
         {
             Graphics g = e.Graphics;
-            g.Clear(Color.Black); // Очистка фона
 
-            // Отрисовка тела змейки
-            foreach (Point segment in snake.Body)
+            // Рисуем тело змейки
+            foreach (var segment in snake.Body)
             {
-                g.FillRectangle(Brushes.Green, new Rectangle(segment.X, segment.Y, 10, 10)); // Рисуем каждый сегмент змейки
+                g.FillRectangle(Brushes.Green, segment.X, segment.Y, 10, 10); // Рисуем змейку
             }
 
-            // Отрисовка счета
-            string scoreText = $"Счет: {score}";
-            SizeF textSize = g.MeasureString(scoreText, scoreFont);
-            PointF textPosition = new PointF((this.ClientSize.Width - textSize.Width) / 2, 10); // Центрируем текст по горизонтали
-            g.DrawString(scoreText, scoreFont, Brushes.White, textPosition); // Отрисовка счета
+            // Рисуем еду
+            g.FillRectangle(Brushes.Red, foodPosition.X, foodPosition.Y, 10, 10); // Рисуем еду
+
+            // Рисуем счёт
+            g.DrawString($"Счёт: {score}", scoreFont, Brushes.White, new PointF(10, 10));
+
+            // Рисуем синие прямоугольники вокруг объектов еды
+            foreach (var foodObject in foodObjects)
+            {
+                Rectangle screenBounds = foodObject.Bounds;
+
+                // Преобразуем координаты окна рабочего стола в координаты окна приложения, если требуется
+                Point relativePosition = this.PointToClient(screenBounds.Location);
+                Rectangle adjustedBounds = new Rectangle(relativePosition, screenBounds.Size);
+
+                // Рисуем синий прямоугольник по границам объекта
+                g.DrawRectangle(Pens.Blue, adjustedBounds);
+            }
         }
 
 
-        // Метод для обработки нажатий клавиш
-        protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
-        {
-            switch (keyData)
-            {
-                case Keys.Up:
-                    if (snake.CurrentDirection != Direction.Down)
-                        snake.CurrentDirection = Direction.Up;
-                    break;
-                case Keys.Down:
-                    if (snake.CurrentDirection != Direction.Up)
-                        snake.CurrentDirection = Direction.Down;
-                    break;
-                case Keys.Left:
-                    if (snake.CurrentDirection != Direction.Right)
-                        snake.CurrentDirection = Direction.Left;
-                    break;
-                case Keys.Right:
-                    if (snake.CurrentDirection != Direction.Left)
-                        snake.CurrentDirection = Direction.Right;
-                    break;
-            }
-            return base.ProcessCmdKey(ref msg, keyData);
-        }
-    }
-
-    // Класс змейки
-    public class Snake
-    {
-        public List<Point> Body { get; private set; }
-        public Direction CurrentDirection { get; set; }
-
-        public Snake()
-        {
-            // Начальная позиция змейки
-            Body = new List<Point>
-            {
-                new Point(100, 100), // Голова змейки
-                new Point(90, 100),  // Тело
-                new Point(80, 100)   // Тело
-            };
-            CurrentDirection = Direction.Right; // По умолчанию движение вправо
-        }
-
-        public void Move()
-        {
-            var head = Body.First();
-            Point newHead = head;
-
-            switch (CurrentDirection)
-            {
-                case Direction.Up:
-                    newHead.Y -= 10; // Движение вверх
-                    break;
-                case Direction.Down:
-                    newHead.Y += 10; // Движение вниз
-                    break;
-                case Direction.Left:
-                    newHead.X -= 10; // Движение влево
-                    break;
-                case Direction.Right:
-                    newHead.X += 10; // Движение вправо
-                    break;
-            }
-
-            // Проверка, выходят ли координаты за границы
-            if (newHead.X < 0 || newHead.X >= Screen.PrimaryScreen.Bounds.Width ||
-                newHead.Y < 0 || newHead.Y >= Screen.PrimaryScreen.Bounds.Height)
-            {
-                Console.WriteLine("Змейка вышла за пределы экрана!");
-            }
-
-            // Добавляем новую голову и удаляем хвост
-            Body.Insert(0, newHead);
-            Body.RemoveAt(Body.Count - 1);
-
-            // Выводим координаты головы в консоль
-            Console.WriteLine($"Координаты головы: {newHead.X}, {newHead.Y}");
-        }
-    }
-
-    // Перечисление для направления движения
-    public enum Direction
-    {
-        Up,
-        Down,
-        Left,
-        Right
     }
 }
