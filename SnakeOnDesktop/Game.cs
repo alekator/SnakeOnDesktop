@@ -14,17 +14,23 @@ namespace SnakeOnDesktop
         private int score;
         private Random random;
         private Font scoreFont;
+        private Font gameOverFont; // Шрифт для табло
         private Point foodPosition;
         private Desktop desktop;
         private bool isGameOver;
         private const int SegmentSize = 50;
+        private SoundManager soundManager;
+        private Food currentFood;
+        private Form form; // Поле для хранения ссылки на форму
 
         public Game(Form form)
         {
-            InitializeGame(form);
+            this.form = form; // Сохраняем форму в поле класса
+            soundManager = new SoundManager();
+            InitializeGame();
         }
 
-        private void InitializeGame(Form form)
+        private void InitializeGame()
         {
             isGameOver = false;
             desktop = new Desktop();
@@ -32,29 +38,29 @@ namespace SnakeOnDesktop
             snake = new Snake();
             random = new Random();
             scoreFont = new Font("Arial", 24, FontStyle.Bold);
+            gameOverFont = new Font("Arial", 32, FontStyle.Bold); // Инициализация шрифта для табло
 
             gameTimer = new Timer();
             gameTimer.Interval = 10;
-            gameTimer.Tick += (sender, e) => GameTimer_Tick(form);
+            gameTimer.Tick += (sender, e) => GameTimer_Tick();
             gameTimer.Start();
 
             score = 0;
+            currentFood = new Food(SegmentSize); // Инициализируем еду
             GenerateFood();
         }
 
-        private void GameTimer_Tick(Form form)
+        private void GameTimer_Tick()
         {
             snake.Move();
             CheckForFood();
-            CheckCollisions(form);
+            CheckCollisions();
             form.Invalidate();
         }
 
         private void GenerateFood()
         {
-            int maxX = (SegmentSize * (int)(SystemInformation.VirtualScreen.Width / SegmentSize));
-            int maxY = (SegmentSize * (int)(SystemInformation.VirtualScreen.Height / SegmentSize));
-            foodPosition = new Point(random.Next(0, maxX / SegmentSize) * SegmentSize, random.Next(0, maxY / SegmentSize) * SegmentSize);
+            currentFood.GenerateFood(SegmentSize); // Генерация новой еды
         }
 
         public void Draw(Graphics g)
@@ -64,7 +70,7 @@ namespace SnakeOnDesktop
                 g.FillRectangle(Brushes.Green, segment.X, segment.Y, SegmentSize, SegmentSize);
             }
 
-            g.FillRectangle(Brushes.Red, foodPosition.X, foodPosition.Y, SegmentSize, SegmentSize);
+            g.FillRectangle(Brushes.Red, currentFood.Position.X, currentFood.Position.Y, SegmentSize, SegmentSize);
 
             if (!isGameOver)
             {
@@ -72,6 +78,15 @@ namespace SnakeOnDesktop
                 SizeF textSize = g.MeasureString(scoreText, scoreFont);
                 float xPosition = (SystemInformation.VirtualScreen.Width - textSize.Width) / 2;
                 g.DrawString(scoreText, scoreFont, Brushes.White, new PointF(xPosition, 10));
+            }
+            else
+            {
+                // Отображение табло при завершении игры
+                string gameOverText = $"Игра окончена! Счёт: {score}\nНажмите R для рестарта";
+                SizeF gameOverSize = g.MeasureString(gameOverText, gameOverFont);
+                float xPosition = (form.ClientSize.Width - gameOverSize.Width) / 2;
+                float yPosition = (form.ClientSize.Height - gameOverSize.Height) / 2;
+                g.DrawString(gameOverText, gameOverFont, Brushes.Red, new PointF(xPosition, yPosition));
             }
         }
 
@@ -94,20 +109,29 @@ namespace SnakeOnDesktop
                 case Keys.R:
                     if (isGameOver) RestartGame();
                     break;
+                case Keys.Escape: // Обработка нажатия клавиши ESC
+                    if (!isGameOver) GameOver(); // Вызываем завершение игры
+                    break;
             }
         }
 
         private void CheckForFood()
         {
-            if (snake.Body[0] == foodPosition)
+            var head = snake.Body[0];
+
+            double distance = Math.Sqrt(Math.Pow(head.X - currentFood.CenterX, 2) + Math.Pow(head.Y - currentFood.CenterY, 2));
+
+            const int eatRadius = 50;
+            if (distance < eatRadius)
             {
                 snake.Grow();
                 score++;
+                soundManager.PlayEatSound();
                 GenerateFood();
             }
         }
 
-        private void CheckCollisions(Form form)
+        private void CheckCollisions()
         {
             var head = snake.Body.First();
 
@@ -122,14 +146,15 @@ namespace SnakeOnDesktop
             {
                 if (head == snake.Body[i])
                 {
-                    GameOver(form);
+                    GameOver();
                 }
             }
         }
 
-        private void GameOver(Form form)
+        private void GameOver()
         {
             gameTimer.Stop();
+            soundManager.PlayGameOverSound();
             isGameOver = true;
             form.Invalidate();
         }
