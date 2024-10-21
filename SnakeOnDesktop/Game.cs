@@ -10,6 +10,7 @@ namespace SnakeOnDesktop
     {
         private Timer gameTimer;
         private Snake snake;
+        private GameDifficulty difficulty;
         private List<Desktop.DesktopObject> foodObjects;
         private int score;
         private Random random;
@@ -23,10 +24,11 @@ namespace SnakeOnDesktop
         private Food currentFood;
         private Form form; // Поле для хранения ссылки на форму
 
-        public Game(Form form)
+        public Game(Form form, GameDifficulty difficulty)
         {
             this.form = form; // Сохраняем форму в поле класса
             soundManager = new SoundManager();
+            this.difficulty = difficulty;
             InitializeGame();
         }
 
@@ -41,7 +43,7 @@ namespace SnakeOnDesktop
             gameOverFont = new Font("Arial", 32, FontStyle.Bold); // Инициализация шрифта для табло
 
             gameTimer = new Timer();
-            gameTimer.Interval = 10;
+            gameTimer.Interval = difficulty.SnakeSpeed; // Скорость движения змейки в зависимости от сложности
             gameTimer.Tick += (sender, e) => GameTimer_Tick();
             gameTimer.Start();
 
