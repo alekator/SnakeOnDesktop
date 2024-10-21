@@ -23,6 +23,10 @@ namespace SnakeOnDesktop
         private SoundManager soundManager;
         private Food currentFood;
         private Form form; // Поле для хранения ссылки на форму
+        private List<Obstacle> obstacles; // Добавь это поле в класс Game
+        private Portal portal; // Поле для хранения портала
+        private const int PortalWidth = 50; // Ширина портала
+        private int portalPositionX; // Позиция по оси X для портала
 
         public Game(Form form, GameDifficulty difficulty)
         {
@@ -46,10 +50,10 @@ namespace SnakeOnDesktop
             gameTimer.Interval = difficulty.SnakeSpeed; // Скорость движения змейки в зависимости от сложности
             gameTimer.Tick += (sender, e) => GameTimer_Tick();
             gameTimer.Start();
-
+            obstacles = new List<Obstacle>(); // Инициализируй список препятствий
             score = 0;
-            currentFood = new Food(SegmentSize); // Инициализируем еду
-            GenerateFood();
+            currentFood = new Food(); // Инициализируем еду
+            GenerateFood(); // Генерируем начальную позицию еды
         }
 
         private void GameTimer_Tick()
@@ -62,8 +66,66 @@ namespace SnakeOnDesktop
 
         private void GenerateFood()
         {
-            currentFood.GenerateFood(SegmentSize); // Генерация новой еды
+            // Генерируем случайное положение еды
+            currentFood.GenerateRandomFood(form.ClientSize.Width, form.ClientSize.Height);
+
+            // Проверяем, не попадает ли еда на змею, препятствия или портал
+            while (obstacles != null && obstacles.Any(o => o.Bounds.IntersectsWith(new Rectangle(currentFood.Position, new Size(SegmentSize, SegmentSize))) ||
+                                                            snake.Body.Contains(currentFood.Position)) ||
+                   portal != null && (portal.Bounds.IntersectsWith(new Rectangle(currentFood.Position, new Size(SegmentSize, SegmentSize))) ||
+                                      portal.BottomBounds.IntersectsWith(new Rectangle(currentFood.Position, new Size(SegmentSize, SegmentSize)))))
+            {
+                // Генерируем снова, если еда попадает на змею, препятствия или портал
+                currentFood.GenerateRandomFood(form.ClientSize.Width, form.ClientSize.Height);
+            }
         }
+
+
+
+
+
+
+        private void GenerateObstacle()
+        {
+            Point obstaclePosition;
+            Rectangle newObstacle;
+            int obstacleType = random.Next(0, 3); // Случайный выбор типа препятствия
+
+            int width, height;
+
+            switch (obstacleType)
+            {
+                case 0: // Прямоугольное препятствие
+                    width = SegmentSize; // Фиксированная ширина в 1 сегмент
+                    height = random.Next(1, 4) * SegmentSize; // Размер от 1 до 3 сегментов высотой
+                    break;
+
+                case 1: // "Г" образное препятствие (горизонтальное)
+                    width = 2 * SegmentSize; // Ширина 2 сегмента
+                    height = SegmentSize; // Высота 1 сегмент
+                    break;
+
+                case 2: // "Г" образное препятствие (вертикальное)
+                    width = SegmentSize; // Ширина 1 сегмент
+                    height = 2 * SegmentSize; // Высота 2 сегмента
+                    break;
+
+                default:
+                    throw new InvalidOperationException("Invalid obstacle type");
+            }
+
+            do
+            {
+                int x = random.Next(0, form.ClientSize.Width / SegmentSize) * SegmentSize; // Случайная позиция по горизонтали
+                int y = random.Next(0, (form.ClientSize.Height - height) / SegmentSize) * SegmentSize; // Случайная позиция по вертикали
+                obstaclePosition = new Point(x, y);
+                newObstacle = new Rectangle(obstaclePosition, new Size(width, height));
+            } while (obstacles.Any(o => o.Bounds.IntersectsWith(newObstacle) ||
+                                        snake.Body.Any(segment => newObstacle.Contains(segment)))); // Проверяем на пересечение
+
+            obstacles.Add(new Obstacle(obstaclePosition, new Size(width, height))); // Добавляем новое препятствие в список
+        }
+
 
         public void Draw(Graphics g)
         {
@@ -73,6 +135,21 @@ namespace SnakeOnDesktop
             }
 
             g.FillRectangle(Brushes.Red, currentFood.Position.X, currentFood.Position.Y, SegmentSize, SegmentSize);
+
+
+            // Рисуем верхнюю часть портала
+            if (portal != null)
+            {
+                // Рисуем верхнюю часть
+                g.FillRectangle(Brushes.Blue, portal.Bounds.X, portal.Bounds.Y, portal.Bounds.Width, portal.Bounds.Height);
+
+                // Рисуем нижнюю часть
+                g.FillRectangle(Brushes.Blue, portal.BottomBounds.X, portal.BottomBounds.Y, portal.BottomBounds.Width, portal.BottomBounds.Height);
+
+                // Рисуем проход (не закрашиваем его)
+                Rectangle passageBounds = new Rectangle(portal.Bounds.X, portal.Bounds.Y + portal.Bounds.Height, portal.Bounds.Width, SegmentSize * 2);
+                g.FillRectangle(Brushes.Transparent, passageBounds); // Этот прямоугольник оставляем прозрачным
+            }
 
             if (!isGameOver)
             {
@@ -89,6 +166,10 @@ namespace SnakeOnDesktop
                 float xPosition = (form.ClientSize.Width - gameOverSize.Width) / 2;
                 float yPosition = (form.ClientSize.Height - gameOverSize.Height) / 2;
                 g.DrawString(gameOverText, gameOverFont, Brushes.Red, new PointF(xPosition, yPosition));
+            }
+            foreach (var obstacle in obstacles)
+            {
+                g.FillRectangle(Brushes.Gray, obstacle.Bounds); // Рисуем препятствие
             }
         }
 
@@ -130,20 +211,122 @@ namespace SnakeOnDesktop
                 score++;
                 soundManager.PlayEatSound();
                 GenerateFood();
+
+
+                if (score == 10) // Проверяем, набрано ли 50 очков
+                {
+                    CreatePortal();
+                }
+
+                if (score % 5 == 0 && score > 0) // Проверяем, набрано ли 10 очков
+                {
+                    GenerateObstacle(); // Генерируем новое препятствие
+                }
+
             }
         }
+        private void CreatePortal()
+        {
+            // Устанавливаем позицию портала в центре экрана
+            portalPositionX = (form.ClientSize.Width - PortalWidth) / 2;
+
+            // Высота портала от верхней границы экрана до середины, не доходя 1 сегмента
+            int topPortalHeight = (form.ClientSize.Height / 2) - SegmentSize;
+
+            // Высота портала от нижней границы экрана до середины, не доходя 1 сегмента
+            int bottomPortalHeight = (form.ClientSize.Height / 2) - SegmentSize;
+
+            // Создаем портал
+            portal = new Portal(portalPositionX, PortalWidth, form.ClientSize.Height);
+
+            // Обновляем границы портала
+            portal.Bounds = new Rectangle(portalPositionX, 0, PortalWidth, topPortalHeight); // Верхняя часть портала
+            portal.PassageBounds = new Rectangle(portalPositionX, topPortalHeight, PortalWidth, SegmentSize * 2); // Проход в центре (2 сегмента в высоту)
+
+            // Добавляем нижнюю часть портала
+            portal.BottomBounds = new Rectangle(portalPositionX, form.ClientSize.Height - bottomPortalHeight, PortalWidth, bottomPortalHeight); // Нижняя часть портала
+        }
+
+
+
 
         private void CheckCollisions()
         {
             var head = snake.Body.First();
+            Rectangle headBounds = new Rectangle(head.X, head.Y, SegmentSize, SegmentSize); // Создаем прямоугольник для головы змеи
 
-            if (head.X < 0) head.X = form.ClientSize.Width - 10;
-            else if (head.X >= form.ClientSize.Width) head.X = 0;
-            if (head.Y < 0) head.Y = form.ClientSize.Height - 10;
-            else if (head.Y >= form.ClientSize.Height) head.Y = 0;
+            // Проверка выхода за границы экрана
+            if (head.X < 0)
+            {
+                head.X = form.ClientSize.Width - SegmentSize; // Появление справа
+            }
+            else if (head.X >= form.ClientSize.Width)
+            {
+                head.X = 0; // Появление слева
+            }
+            if (head.Y < 0)
+            {
+                head.Y = form.ClientSize.Height - SegmentSize; // Появление снизу
+            }
+            else if (head.Y >= form.ClientSize.Height)
+            {
+                head.Y = 0; // Появление сверху
+            }
 
+            // Проверка столкновения с верхней частью портала
+            if (portal != null && headBounds.IntersectsWith(portal.Bounds))
+            {
+                // Логика для телепортации в противоположную сторону
+                switch (snake.CurrentDirection)
+                {
+                    case Direction.Right:
+                        head.X = form.ClientSize.Width - SegmentSize; // Появление справа
+                        snake.CurrentDirection = Direction.Left; // Разворот
+                        break;
+                    case Direction.Left:
+                        head.X = 0; // Появление слева
+                        snake.CurrentDirection = Direction.Right; // Разворот
+                        break;
+                    case Direction.Down:
+                        head.Y = form.ClientSize.Height - SegmentSize; // Появление снизу
+                        snake.CurrentDirection = Direction.Up; // Разворот
+                        break;
+                    case Direction.Up:
+                        head.Y = 0; // Появление сверху
+                        snake.CurrentDirection = Direction.Down; // Разворот
+                        break;
+                }
+            }
+
+            // Проверка столкновения с нижней частью портала
+            if (portal != null && headBounds.IntersectsWith(portal.BottomBounds))
+            {
+                // Логика для телепортации в противоположную сторону
+                switch (snake.CurrentDirection)
+                {
+                    case Direction.Right:
+                        head.X = form.ClientSize.Width - SegmentSize; // Появление справа
+                        snake.CurrentDirection = Direction.Left; // Разворот
+                        break;
+                    case Direction.Left:
+                        head.X = 0; // Появление слева
+                        snake.CurrentDirection = Direction.Right; // Разворот
+                        break;
+                    case Direction.Down:
+                        head.Y = 0; // Появление сверху
+                        snake.CurrentDirection = Direction.Up; // Разворот
+                        break;
+                    case Direction.Up:
+                        head.Y = form.ClientSize.Height - SegmentSize; // Появление снизу
+                        snake.CurrentDirection = Direction.Down; // Разворот
+                        break;
+                }
+            }
+
+            // Установка новой позиции головы змеи
             snake.Body[0] = head;
 
+            // Проверка столкновения с телом змеи
             for (int i = 1; i < snake.Body.Count; i++)
             {
                 if (head == snake.Body[i])
@@ -151,7 +334,22 @@ namespace SnakeOnDesktop
                     GameOver();
                 }
             }
+
+            // Проверка столкновения с препятствиями
+            foreach (var obstacle in obstacles)
+            {
+                if (headBounds.IntersectsWith(obstacle.Bounds)) // Используем IntersectsWith для проверки пересечения
+                {
+                    GameOver(); // Если столкнулись с препятствием, игра окончена
+                }
+            }
         }
+
+
+
+
+
+
 
         private void GameOver()
         {
@@ -166,8 +364,11 @@ namespace SnakeOnDesktop
             isGameOver = false;
             score = 0;
             snake = new Snake();
-            GenerateFood();
+            obstacles.Clear(); // Очищаем список препятствий
+            portal = null; // Убираем портал
+            GenerateFood(); // Генерируем новую еду
             gameTimer.Start();
         }
+
     }
 }

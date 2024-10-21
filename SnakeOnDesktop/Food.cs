@@ -1,5 +1,4 @@
 ﻿using System.Drawing;
-using System.Windows.Forms;
 using System;
 
 public class Food
@@ -10,19 +9,19 @@ public class Food
     public int CenterX => Position.X + SegmentSize / 2;
     public int CenterY => Position.Y + SegmentSize / 2;
 
-    private const int SegmentSize = 50; // Добавьте это свойство в класс Food
+    private const int SegmentSize = 50; // Размер сегмента еды
 
-    public Food(int segmentSize)
+    public Food()
     {
         random = new Random();
-        GenerateFood(segmentSize);
+        GenerateRandomFood(800, 600); // Параметры ширины и высоты формы
     }
 
-    public void GenerateFood(int segmentSize)
+    public void GenerateRandomFood(int formWidth, int formHeight)
     {
-        // Генерация случайных координат для еды
-        int maxX = (Screen.PrimaryScreen.Bounds.Width / segmentSize) * segmentSize;
-        int maxY = (Screen.PrimaryScreen.Bounds.Height / segmentSize) * segmentSize;
-        Position = new Point(random.Next(0, maxX / segmentSize) * segmentSize, random.Next(0, maxY / segmentSize) * segmentSize);
+        Position = new Point(
+            random.Next(0, formWidth / SegmentSize) * SegmentSize,
+            random.Next(0, formHeight / SegmentSize) * SegmentSize
+        );
     }
 }
