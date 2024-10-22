@@ -11,6 +11,7 @@ namespace SnakeOnDesktop
         private Game game; // Объявите переменную game
         private const int SegmentSize = 50; // Новый размер сегмента змейки и еды
         private GameDifficulty selectedDifficulty;
+        private string username; // Добавьте эту строку
         public Form1()
         {
             InitializeComponent();
@@ -70,7 +71,8 @@ namespace SnakeOnDesktop
 
         private void InitializeGame(GameDifficulty difficulty)
         {
-            game = new Game(this, difficulty); // Передаем выбранную сложность в игру
+            string connectionString = @"Server=CE3HU7L\SQLEXPRESS;Database=SnakeGameDB;Trusted_Connection=True; Connect Timeout=60;";
+            game = new Game(this, difficulty, connectionString, username); // Передаем выбранную сложность в игру
             Invalidate(); // Перерисовка экрана
         }
 
@@ -84,11 +86,6 @@ namespace SnakeOnDesktop
         {
             game.KeyDown(e.KeyCode); // Передаем нажатую клавишу в игру
         }
-
-        //private void InitializeGame()
-        //{
-        //    game = new Game(this); // Инициализируем игру
-        //}
 
         private void Form1_Paint(object sender, PaintEventArgs e)
         {

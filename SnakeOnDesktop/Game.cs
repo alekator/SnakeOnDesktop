@@ -27,13 +27,22 @@ namespace SnakeOnDesktop
         private Portal portal; // Поле для хранения портала
         private const int PortalWidth = 50; // Ширина портала
         private int portalPositionX; // Позиция по оси X для портала
-
-        public Game(Form form, GameDifficulty difficulty)
+        private Leaderboard leaderboard;
+        private List<LeaderboardEntry> topEntries;
+        private DatabaseManager dbManager;
+        string serverName = @"CE3HU7L\SQLEXPRESS"; // Укажите имя сервера
+        string databaseName = "SnakeGameDB"; // Укажите имя базы данных
+        private string currentUsername;  // Добавьте это поле
+        public Game(Form form, GameDifficulty difficulty, string connectionString, string username)
         {
             this.form = form; // Сохраняем форму в поле класса
+            this.currentUsername = username; // Сохраняем имя пользователя
             soundManager = new SoundManager();
             this.difficulty = difficulty;
             InitializeGame();
+            leaderboard = new Leaderboard(connectionString);
+            topEntries = leaderboard.GetTopEntries(5); // Получаем 5 лучших записей
+            dbManager = new DatabaseManager(serverName, databaseName);
         }
 
         private void InitializeGame()
@@ -79,11 +88,6 @@ namespace SnakeOnDesktop
                 currentFood.GenerateRandomFood(form.ClientSize.Width, form.ClientSize.Height);
             }
         }
-
-
-
-
-
 
         private void GenerateObstacle()
         {
@@ -171,8 +175,19 @@ namespace SnakeOnDesktop
             {
                 g.FillRectangle(Brushes.Gray, obstacle.Bounds); // Рисуем препятствие
             }
+            DrawLeaderboard(g);
         }
+        private void DrawLeaderboard(Graphics g)
+        {
+            Font leaderboardFont = new Font("Arial", 16, FontStyle.Bold);
+            int startY = 50; // Начальная позиция по Y для лидерборда
 
+            for (int i = 0; i < topEntries.Count; i++)
+            {
+                string entryText = $"{i + 1}. {topEntries[i].Username}: {topEntries[i].MaxScore}";
+                g.DrawString(entryText, leaderboardFont, Brushes.White, new PointF(10, startY + (i * 20)));
+            }
+        }
         public void KeyDown(Keys key)
         {
             switch (key)
@@ -222,9 +237,23 @@ namespace SnakeOnDesktop
                 {
                     GenerateObstacle(); // Генерируем новое препятствие
                 }
+                if (score % 1 == 0 && score > 0) // Каждые 5 очков увеличиваем скорость
+                {
+                    int newInterval = (int)(gameTimer.Interval * 0.9); // Уменьшаем интервал на 10%
+
+                    // Убедимся, что интервал не становится меньше минимального значения, например, 50 миллисекунд
+                    gameTimer.Interval = Math.Max(newInterval, 1);
+
+                    Console.WriteLine($"Score: {score}, New Interval: {gameTimer.Interval}"); // Вывод текущего интервала
+                }
+
+
+
 
             }
         }
+
+
         private void CreatePortal()
         {
             // Устанавливаем позицию портала в центре экрана
@@ -253,20 +282,20 @@ namespace SnakeOnDesktop
         private void CheckCollisions()
         {
             var head = snake.Body.First();
-            Rectangle headBounds = new Rectangle(head.X, head.Y, SegmentSize, SegmentSize); // Создаем прямоугольник для головы змеи
+            Rectangle headBounds = new Rectangle(head.X, head.Y, SegmentSize, SegmentSize);
 
             // Проверка выхода за границы экрана
             if (head.X < 0)
             {
-                head.X = form.ClientSize.Width - SegmentSize; // Появление справа
+                head.X = form.ClientSize.Width - SegmentSize;
             }
             else if (head.X >= form.ClientSize.Width)
             {
-                head.X = 0; // Появление слева
+                head.X = 0;
             }
             if (head.Y < 0)
             {
-                head.Y = form.ClientSize.Height - SegmentSize; // Появление снизу
+                head.Y = form.ClientSize.Height - SegmentSize;
             }
             else if (head.Y >= form.ClientSize.Height)
             {
@@ -280,50 +309,47 @@ namespace SnakeOnDesktop
                 switch (snake.CurrentDirection)
                 {
                     case Direction.Right:
-                        head.X = form.ClientSize.Width - SegmentSize; // Появление справа
-                        snake.CurrentDirection = Direction.Left; // Разворот
+                        head.X = form.ClientSize.Width - SegmentSize;
+                        snake.CurrentDirection = Direction.Left;
                         break;
                     case Direction.Left:
-                        head.X = 0; // Появление слева
-                        snake.CurrentDirection = Direction.Right; // Разворот
+                        head.X = 0;
+                        snake.CurrentDirection = Direction.Right;
                         break;
                     case Direction.Down:
-                        head.Y = form.ClientSize.Height - SegmentSize; // Появление снизу
-                        snake.CurrentDirection = Direction.Up; // Разворот
+                        head.Y = form.ClientSize.Height - SegmentSize;
+                        snake.CurrentDirection = Direction.Up;
                         break;
                     case Direction.Up:
-                        head.Y = 0; // Появление сверху
-                        snake.CurrentDirection = Direction.Down; // Разворот
+                        head.Y = 0;
+                        snake.CurrentDirection = Direction.Down;
                         break;
                 }
             }
 
-            // Проверка столкновения с нижней частью портала
             if (portal != null && headBounds.IntersectsWith(portal.BottomBounds))
             {
-                // Логика для телепортации в противоположную сторону
                 switch (snake.CurrentDirection)
                 {
                     case Direction.Right:
-                        head.X = form.ClientSize.Width - SegmentSize; // Появление справа
-                        snake.CurrentDirection = Direction.Left; // Разворот
+                        head.X = form.ClientSize.Width - SegmentSize;
+                        snake.CurrentDirection = Direction.Left;
                         break;
                     case Direction.Left:
-                        head.X = 0; // Появление слева
-                        snake.CurrentDirection = Direction.Right; // Разворот
+                        head.X = 0;
+                        snake.CurrentDirection = Direction.Right;
                         break;
                     case Direction.Down:
-                        head.Y = 0; // Появление сверху
-                        snake.CurrentDirection = Direction.Up; // Разворот
+                        head.Y = 0;
+                        snake.CurrentDirection = Direction.Up;
                         break;
                     case Direction.Up:
-                        head.Y = form.ClientSize.Height - SegmentSize; // Появление снизу
-                        snake.CurrentDirection = Direction.Down; // Разворот
+                        head.Y = form.ClientSize.Height - SegmentSize;
+                        snake.CurrentDirection = Direction.Down;
                         break;
                 }
             }
 
-            // Установка новой позиции головы змеи
             snake.Body[0] = head;
 
             // Проверка столкновения с телом змеи
@@ -338,35 +364,52 @@ namespace SnakeOnDesktop
             // Проверка столкновения с препятствиями
             foreach (var obstacle in obstacles)
             {
-                if (headBounds.IntersectsWith(obstacle.Bounds)) // Используем IntersectsWith для проверки пересечения
+                if (headBounds.IntersectsWith(obstacle.Bounds))
                 {
-                    GameOver(); // Если столкнулись с препятствием, игра окончена
+                    GameOver();
                 }
             }
         }
-
-
-
-
-
-
 
         private void GameOver()
         {
             gameTimer.Stop();
             soundManager.PlayGameOverSound();
             isGameOver = true;
+
+            if (!string.IsNullOrEmpty(currentUsername)) // Используем более безопасную проверку
+            {
+                // Получаем текущий максимальный счет из базы данных
+                int maxScore = leaderboard.GetMaxScore(currentUsername); // Убедитесь, что метод существует
+
+                // Если текущий счет больше, чем максимальный, обновляем в базе данных
+                if (score > maxScore)
+                {
+                    dbManager.UpdateMaxScore(currentUsername, score);
+                }
+                else
+                {
+                    Console.WriteLine($"Текущий счет ({score}) не превышает максимальный счет ({maxScore}).");
+                }
+            }
+            else
+            {
+                Console.WriteLine("Имя игрока не установлено. Обновление максимального счета невозможно.");
+            }
+
             form.Invalidate();
         }
+
+
 
         private void RestartGame()
         {
             isGameOver = false;
             score = 0;
             snake = new Snake();
-            obstacles.Clear(); // Очищаем список препятствий
-            portal = null; // Убираем портал
-            GenerateFood(); // Генерируем новую еду
+            obstacles.Clear();
+            portal = null;
+            GenerateFood();
             gameTimer.Start();
         }
 

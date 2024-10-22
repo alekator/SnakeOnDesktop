@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace SnakeOnDesktop
@@ -16,7 +13,21 @@ namespace SnakeOnDesktop
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new Form1());
+
+            // Создаем и показываем LoginForm
+            using (LoginForm loginForm = new LoginForm())
+            {
+                if (loginForm.ShowDialog() == DialogResult.OK) // Проверяем, успешна ли аутентификация
+                {
+                    // Запускаем основную форму, если вход успешен
+                    Application.Run(new Form1());
+                }
+                else
+                {
+                    // Если аутентификация не удалась, завершаем приложение
+                    Application.Exit();
+                }
+            }
         }
     }
 }

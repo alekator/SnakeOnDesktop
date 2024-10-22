@@ -58,5 +58,6 @@ namespace SnakeOnDesktop
             Point lastSegment = Body[Body.Count - 1];
             Body.Add(lastSegment);
         }
+
     }
 }
