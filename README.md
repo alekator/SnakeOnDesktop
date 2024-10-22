@@ -1,65 +1,63 @@
 # SnakeOnDesktop
 
-## Описание проекта
-**SnakeOnDesktop** — это современная реализация классической игры "Змейка" для платформы Windows, разработанная на C#. Это приложение не просто обычная "Змейка"; оно включает в себя множество уникальных функций и улучшений, которые делают игровой процесс более увлекательным и захватывающим.
+## Project Description
+**SnakeOnDesktop** is a modern implementation of the classic game "Snake" for the Windows platform, developed in C#. This application is not just an ordinary "Snake"; it includes numerous unique features and enhancements that make the gameplay more engaging and exciting.
 
-### Уникальные особенности:
-- **Игровое поле в любом месте:** Смотишь фильм ? Читаешь документ ? играй прямо поверх него в змейку благодаря полному перекрытию всех открытых окон и прозрачной игровой карте.
-- **Динамичные уровни сложности:** Игроки могут выбирать уровень сложности перед началом игры, что позволяет адаптировать игровой процесс под свой уровень мастерства и предпочтения.
-- **Интерактивные элементы:** В игре присутствуют различные препятствия и порталы, добавляющие новые тактические возможности и разнообразие в игровой процесс.
-- **Лидерборд:** Возможность отслеживать свои достижения и соревноваться с другими игроками через систему лидерборда, хранящую максимальные очки и имена пользователей.
-- **Звуковые эффекты и музыка:** Использование библиотеки NAudio для воспроизведения музыки и эффектов, что делает игру более атмосферной.
-- **Современный интерфейс:** Игровой интерфейс, разработанный с использованием Windows Forms, предлагает интуитивно понятный и приятный визуальный опыт.
-- **Минимизация окон:** Интеграция с Win32 API позволяет игрокам минимизировать все открытые окна, чтобы сосредоточиться на игре.
-- **Инсталлятор:** Удобный установщик, созданный с помощью Inno Setup, позволяет легко устанавливать игру на компьютер.
+### Unique Features:
+- **Game Field Anywhere:** Watching a movie? Reading a document? Play Snake right over it with full overlap of all open windows and a transparent game map.
+- **Dynamic Difficulty Levels:** Players can choose the difficulty level before starting the game, allowing them to tailor the gameplay to their skill level and preferences.
+- **Interactive Elements:** The game features various obstacles and portals that add new tactical possibilities and diversity to the gameplay.
+- **Leaderboard:** The ability to track your achievements and compete with other players through a leaderboard system that stores high scores and usernames.
+- **Sound Effects and Music:** Utilizing the NAudio library for playing music and effects, which enhances the atmosphere of the game.
+- **Modern Interface:** The game interface, developed using Windows Forms, offers an intuitive and pleasant visual experience.
+- **Minimize Windows:** Integration with the Win32 API allows players to minimize all open windows to focus on the game.
 
-## Технологический стек
-- **Язык программирования:** C#
-- **Платформа:** .NET Framework
-- **Графика:** Windows Forms для визуализации игрового процесса
-- **База данных:** Microsoft SQL Server для хранения имен пользователей и максимальных очков
-- **Звуковые эффекты:** NAudio для воспроизведения музыки и звуковых эффектов
-- **API Windows:** Использование Win32 API для взаимодействия с системой, включая управление окнами, минимизацию всех окон и получение информации о текущем окне
-- **Управление потоками:** Использование асинхронных методов для управления игровым процессом и взаимодействия с базой данных без блокировки пользовательского интерфейса
-- **Обработка событий:** Реализация событий и обработчиков событий для взаимодействия пользователя с игровым интерфейсом, включая нажатия клавиш и обновления графики
-- **Объектно-ориентированное программирование (ООП):** Применение принципов ООП для структурирования кода, включая создание классов для различных игровых объектов (например, змейка, препятствия, порталы)
+## Technology Stack
+- **Programming Language:** C#
+- **Platform:** .NET Framework
+- **Graphics:** Windows Forms for visualizing the gameplay
+- **Database:** Microsoft SQL Server for storing usernames and high scores
+- **Sound Effects:** NAudio for playing music and sound effects
+- **Windows API:** Using Win32 API for interacting with the system, including window management, minimizing all windows, and obtaining information about the current window
+- **Thread Management:** Utilizing asynchronous methods to manage gameplay and interact with the database without blocking the user interface
+- **Event Handling:** Implementing events and event handlers for user interaction with the game interface, including key presses and graphics updates
+- **Object-Oriented Programming (OOP):** Applying OOP principles to structure the code, including creating classes for various game objects (e.g., snake, obstacles, portals)
 
+## Key Features
+- **Gameplay:** 
+  - Control the snake using the arrow keys on the keyboard.
+  - Collect food to grow and earn points.
+- **Difficulty Levels:** 
+  - Choose the difficulty level before starting the game (Easy, Medium, Hard).
+- **Leaderboard System:** 
+  - Save and display users' high scores.
+  - Ability to check personal records.
+- **Sound Effects:** 
+  - Playback of background music and sounds when collecting food and ending the game.
+- **Portals:** 
+  - Interactive elements that move the snake to the opposite side of the game field.
 
-## Ключевые функции
-- **Игровой процесс:** 
-  - Управляйте змеей с помощью стрелок на клавиатуре.
-  - Собирайте еду, чтобы расти и набирать очки.
-- **Уровни сложности:** 
-  - Выбор уровня сложности перед началом игры (Легкий, Средний, Сложный).
-- **Система лидерборда:** 
-  - Сохранение и отображение максимальных результатов пользователей.
-  - Возможность проверки личных рекордов.
-- **Звуковые эффекты:** 
-  - Проигрывание фоновой музыки и звуков при сборе еды и окончании игры.
-- **Порталы:** 
-  - Интерактивные элементы, которые перемещают змею на противоположную сторону игрового поля.
-
-## Установка
-1. **Клонирование репозитория:**
+## Installation
+1. **Cloning the Repository:**
    ```bash
    git clone https://github.com/username/SnakeOnDesktop.git
    ```
-## Сборка проекта:
-- Откройте проект в Visual Studio.
-- Соберите проект с использованием конфигурации "Release"
+## Building the Project:
+- Open the project in Visual Studio.
+- Build the project using the "Release" configuration.
   
-## Запуск
-- Запустите полученный EXE файл, чтобы начать играть в SnakeOnDesktop.
+## Running
+- Run the resulting EXE file to start playing SnakeOnDesktop.
   
-## Контрибьюция
--Если вы хотите внести свой вклад в проект, пожалуйста, создайте Pull Request с вашими изменениями. Буду рад любым улучшениям!
+## Contribution
+- If you would like to contribute to the project, please create a Pull Request with your changes. I welcome any improvements!
 
-## Лицензия
-- Этот проект лицензирован под MIT License.
+## License
+- This project is licensed under the MIT License.
   
-### Замечания:
-- Замените `username` в строке клонирования репозитория на ваше имя пользователя GitHub.
-- Добавьте любой дополнительный контент или секции по вашему усмотрению, чтобы подчеркнуть уникальные особенности вашего проекта.
+### Notes:
+- Replace username in the repository cloning line with your GitHub username.
+- Add any additional content or sections at your discretion to highlight the unique features of your project.
 
 
 
