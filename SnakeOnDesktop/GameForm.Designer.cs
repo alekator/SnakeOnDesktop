@@ -1,6 +1,6 @@
 ﻿namespace SnakeOnDesktop
 {
-    partial class Form1
+    partial class GameForm
     {
         /// <summary>
         /// Required designer variable.
@@ -29,9 +29,6 @@
         private void InitializeComponent()
         {
             this.SuspendLayout();
-            // 
-            // Form1
-            // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(255)))), ((int)(((byte)(128)))));
@@ -44,7 +41,7 @@
             this.WindowState = System.Windows.Forms.FormWindowState.Maximized;
             this.ResumeLayout(false);
             this.Paint += new System.Windows.Forms.PaintEventHandler(this.Form1_Paint);
-
+            this.KeyPreview = true;
         }
 
         #endregion

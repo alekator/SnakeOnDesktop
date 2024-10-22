@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace SnakeOnDesktop
@@ -9,14 +6,25 @@ namespace SnakeOnDesktop
     internal static class Program
     {
         /// <summary>
-        /// The main entry point for the application.
+        /// Статический класс, содержащий точку входа в приложение.
         /// </summary>
         [STAThread]
         static void Main()
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new Form1());
+
+            using (LoginForm loginForm = new LoginForm())
+            {
+                if (loginForm.ShowDialog() == DialogResult.OK)
+                {
+                    Application.Run(new GameForm());
+                }
+                else
+                {
+                    Application.Exit();
+                }
+            }
         }
     }
 }
