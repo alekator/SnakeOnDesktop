@@ -5,6 +5,9 @@ using System.Runtime.InteropServices;
 
 namespace SnakeOnDesktop
 {
+    /// <summary>
+    /// Класс для взаимодействия с объектами рабочего стола Windows, используя Windows API (в разработке).
+    /// </summary>
     public class Desktop
     {
         public class DesktopObject
@@ -13,7 +16,6 @@ namespace SnakeOnDesktop
             public Rectangle Bounds { get; set; }
         }
 
-        // Импорт необходимых функций из Windows API
         [DllImport("user32.dll")]
         private static extern IntPtr GetForegroundWindow();
 
@@ -39,7 +41,7 @@ namespace SnakeOnDesktop
         {
             List<DesktopObject> desktopObjects = new List<DesktopObject>();
 
-            IntPtr hwnd = GetForegroundWindow(); // Получаем активное окно
+            IntPtr hwnd = GetForegroundWindow();
 
             while (hwnd != IntPtr.Zero)
             {
@@ -48,11 +50,11 @@ namespace SnakeOnDesktop
                 {
                     desktopObjects.Add(new DesktopObject
                     {
-                        Title = hwnd.ToString(), // Здесь можно получить заголовок окна, если это необходимо
+                        Title = hwnd.ToString(),
                         Bounds = new Rectangle(rect.Left, rect.Top, rect.Right - rect.Left, rect.Bottom - rect.Top)
                     });
                 }
-                hwnd = FindWindowEx(IntPtr.Zero, hwnd, null, null); // Получаем следующее окно
+                hwnd = FindWindowEx(IntPtr.Zero, hwnd, null, null);
             }
 
             return desktopObjects;

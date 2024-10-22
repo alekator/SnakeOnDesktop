@@ -2,7 +2,7 @@
 
 namespace SnakeOnDesktop
 {
-    partial class LoginForm : Form // Убедитесь, что ваш класс наследует от Form
+    partial class LoginForm : Form
     {
         private System.ComponentModel.IContainer components = null;
         private System.Windows.Forms.TextBox txtUsername;

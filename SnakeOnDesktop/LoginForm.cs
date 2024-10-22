@@ -3,43 +3,51 @@ using System.Windows.Forms;
 
 namespace SnakeOnDesktop
 {
+    /// <summary>
+    /// Форма для входа и регистрации пользователя.
+    /// Позволяет пользователю вводить имя пользователя и пароль для входа или регистрации в игре.
+    /// </summary>
     public partial class LoginForm : Form
     {
-        private Random random = new Random(); // Для генерации уникального значения
-        private DatabaseManager dbManager; // Объявление экземпляра DatabaseManager
+        private Random random = new Random();
+        private DatabaseManager dbManager;
+
+        /// <summary>
+        /// Получает имя пользователя после успешного входа.
+        /// </summary>
         public string Username { get; private set; }
 
-
+        /// <summary>
+        /// Инициализирует новый экземпляр класса <see cref="LoginForm"/>.
+        /// </summary>
         public LoginForm()
         {
             InitializeComponent();
-            this.StartPosition = FormStartPosition.CenterScreen; // Установка положения окна
-
-            // Инициализация DatabaseManager с указанием имени сервера и базы данных
-            dbManager = new DatabaseManager(@"CE3HU7L\SQLEXPRESS", "SnakeGameDB"); // Укажите имя сервера
-
-            btnLogin.Click += btnLogin_Click; // Подписка на событие кнопки Вход
-            btnRegister.Click += btnRegister_Click; // Подписка на событие кнопки Регистрация
+            this.StartPosition = FormStartPosition.CenterScreen;
+            dbManager = new DatabaseManager(@"CE3HU7L\SQLEXPRESS", "SnakeGameDB");
+            btnLogin.Click += btnLogin_Click;
+            btnRegister.Click += btnRegister_Click;
         }
 
+        /// <summary>
+        /// Обработчик события нажатия кнопки входа.
+        /// Проверяет введенные учетные данные и выполняет вход пользователя.
         private void btnLogin_Click(object sender, EventArgs e)
         {
             string username = txtUsername.Text;
             string password = txtPassword.Text;
 
-            // Проверка на пустые поля
             if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
             {
                 lblMessage.Text = "Пожалуйста, введите имя пользователя и пароль.";
                 return;
             }
 
-            // Логика проверки учетных данных
             if (IsValidCredentials(username, password))
             {
                 MessageBox.Show($"Добро пожаловать, {username}!");
-                this.DialogResult = DialogResult.OK; // Закрываем форму с результатом OK
-                this.Username = username; // Возвращаем имя пользователя
+                this.DialogResult = DialogResult.OK;
+                this.Username = username;
                 this.Close();
             }
             else
@@ -48,20 +56,21 @@ namespace SnakeOnDesktop
             }
         }
 
-
+        /// <summary>
+        /// Обработчик события нажатия кнопки регистрации.
+        /// Позволяет пользователю зарегистрировать новую учетную запись.
+        /// </summary>
         private void btnRegister_Click(object sender, EventArgs e)
         {
             string username = txtUsername.Text;
             string password = txtPassword.Text;
 
-            // Проверка на пустые поля
             if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
             {
                 lblMessage.Text = "Пожалуйста, введите имя пользователя и пароль.";
                 return;
             }
 
-            // Логика регистрации нового пользователя
             if (RegisterUser(username, password))
             {
                 MessageBox.Show("Регистрация успешна! Вы можете войти.");
@@ -72,26 +81,32 @@ namespace SnakeOnDesktop
             }
         }
 
+        /// <summary>
+        /// Регистрирует нового пользователя.
+        /// </summary>
+        /// <param name="username">Имя пользователя.</param>
+        /// <param name="password">Пароль пользователя.</param>
+        /// <returns>Возвращает true, если регистрация успешна; в противном случае false.</returns>
         private bool RegisterUser(string username, string password)
         {
-            // Проверяем, существует ли пользователь с таким именем
             if (dbManager.UserExists(username))
             {
-                return false; // Если пользователь существует, возвращаем false
+                return false;
             }
 
-            // Если пользователь не существует, вставляем нового пользователя с начальным счетом 0
-            dbManager.InsertPlayer(username, 0); // Запись нового пользователя с начальным счетом 0
-            return true; // Возвращаем true для успешной регистрации
+            dbManager.InsertPlayer(username, 0);
+            return true;
         }
 
-
+        /// <summary>
+        /// Проверяет, являются ли введенные учетные данные допустимыми.
+        /// </summary>
+        /// <param name="username">Имя пользователя.</param>
+        /// <param name="password">Пароль пользователя.</param>
+        /// <returns>Возвращает true, если учетные данные допустимы; в противном случае false.</returns>
         private bool IsValidCredentials(string username, string password)
         {
-            // Здесь должна быть логика для проверки учетных данных
             return !string.IsNullOrWhiteSpace(username) && !string.IsNullOrWhiteSpace(password);
         }
-
-        
     }
 }

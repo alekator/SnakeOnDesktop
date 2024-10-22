@@ -5,7 +5,10 @@ using System.Linq;
 using System.Windows.Forms;
 
 namespace SnakeOnDesktop
-{
+
+{ /// <summary>
+  /// Класс, представляющий основную логику игры "Змейка". Управляет процессом игры, обновлением состояния и отрисовкой элементов.
+  /// </summary>
     public class Game
     {
         private Timer gameTimer;
@@ -15,36 +18,47 @@ namespace SnakeOnDesktop
         private int score;
         private Random random;
         private Font scoreFont;
-        private Font gameOverFont; // Шрифт для табло
+        private Font gameOverFont;
         private Point foodPosition;
         private Desktop desktop;
         private bool isGameOver;
         private const int SegmentSize = 50;
         private SoundManager soundManager;
         private Food currentFood;
-        private Form form; // Поле для хранения ссылки на форму
-        private List<Obstacle> obstacles; // Добавь это поле в класс Game
-        private Portal portal; // Поле для хранения портала
-        private const int PortalWidth = 50; // Ширина портала
-        private int portalPositionX; // Позиция по оси X для портала
+        private Form form;
+        private List<Obstacle> obstacles;
+        private Portal portal;
+        private const int PortalWidth = 50;
+        private int portalPositionX;
         private Leaderboard leaderboard;
         private List<LeaderboardEntry> topEntries;
         private DatabaseManager dbManager;
-        string serverName = @"CE3HU7L\SQLEXPRESS"; // Укажите имя сервера
-        string databaseName = "SnakeGameDB"; // Укажите имя базы данных
-        private string currentUsername;  // Добавьте это поле
+        string serverName = @"CE3HU7L\SQLEXPRESS";
+        string databaseName = "SnakeGameDB";
+        private string currentUsername;
+
+        /// <summary>
+        /// Инициализирует новый экземпляр игры.
+        /// </summary>
+        /// <param name="form">Форма, на которой отображается игра.</param>
+        /// <param name="difficulty">Уровень сложности игры.</param>
+        /// <param name="connectionString">Строка подключения к базе данных.</param>
+        /// <param name="username">Имя текущего пользователя.</param>
         public Game(Form form, GameDifficulty difficulty, string connectionString, string username)
         {
-            this.form = form; // Сохраняем форму в поле класса
-            this.currentUsername = username; // Сохраняем имя пользователя
+            this.form = form;
+            this.currentUsername = username;
             soundManager = new SoundManager();
             this.difficulty = difficulty;
             InitializeGame();
             leaderboard = new Leaderboard(connectionString);
-            topEntries = leaderboard.GetTopEntries(5); // Получаем 5 лучших записей
+            topEntries = leaderboard.GetTopEntries(5);
             dbManager = new DatabaseManager(serverName, databaseName);
         }
 
+        /// <summary>
+        /// Инициализирует параметры игры и запускает игровой процесс.
+        /// </summary>
         private void InitializeGame()
         {
             isGameOver = false;
@@ -53,18 +67,21 @@ namespace SnakeOnDesktop
             snake = new Snake();
             random = new Random();
             scoreFont = new Font("Arial", 24, FontStyle.Bold);
-            gameOverFont = new Font("Arial", 32, FontStyle.Bold); // Инициализация шрифта для табло
+            gameOverFont = new Font("Arial", 32, FontStyle.Bold);
 
             gameTimer = new Timer();
-            gameTimer.Interval = difficulty.SnakeSpeed; // Скорость движения змейки в зависимости от сложности
+            gameTimer.Interval = difficulty.SnakeSpeed;
             gameTimer.Tick += (sender, e) => GameTimer_Tick();
             gameTimer.Start();
-            obstacles = new List<Obstacle>(); // Инициализируй список препятствий
+            obstacles = new List<Obstacle>();
             score = 0;
-            currentFood = new Food(); // Инициализируем еду
-            GenerateFood(); // Генерируем начальную позицию еды
+            currentFood = new Food();
+            GenerateFood();
         }
 
+        /// <summary>
+        /// Метод, вызываемый таймером для обновления состояния игры.
+        /// </summary>
         private void GameTimer_Tick()
         {
             snake.Move();
@@ -73,45 +90,47 @@ namespace SnakeOnDesktop
             form.Invalidate();
         }
 
+        /// <summary>
+        /// Генерирует новую случайную позицию для еды.
+        /// </summary>
         private void GenerateFood()
         {
-            // Генерируем случайное положение еды
             currentFood.GenerateRandomFood(form.ClientSize.Width, form.ClientSize.Height);
 
-            // Проверяем, не попадает ли еда на змею, препятствия или портал
             while (obstacles != null && obstacles.Any(o => o.Bounds.IntersectsWith(new Rectangle(currentFood.Position, new Size(SegmentSize, SegmentSize))) ||
                                                             snake.Body.Contains(currentFood.Position)) ||
                    portal != null && (portal.Bounds.IntersectsWith(new Rectangle(currentFood.Position, new Size(SegmentSize, SegmentSize))) ||
                                       portal.BottomBounds.IntersectsWith(new Rectangle(currentFood.Position, new Size(SegmentSize, SegmentSize)))))
             {
-                // Генерируем снова, если еда попадает на змею, препятствия или портал
                 currentFood.GenerateRandomFood(form.ClientSize.Width, form.ClientSize.Height);
             }
         }
-
+        /// <summary>
+        /// Генерирует препятствия на игрвоом поле.
+        /// </summary>
         private void GenerateObstacle()
         {
             Point obstaclePosition;
             Rectangle newObstacle;
-            int obstacleType = random.Next(0, 3); // Случайный выбор типа препятствия
+            int obstacleType = random.Next(0, 3);
 
             int width, height;
 
             switch (obstacleType)
             {
-                case 0: // Прямоугольное препятствие
-                    width = SegmentSize; // Фиксированная ширина в 1 сегмент
-                    height = random.Next(1, 4) * SegmentSize; // Размер от 1 до 3 сегментов высотой
+                case 0:
+                    width = SegmentSize;
+                    height = random.Next(1, 4) * SegmentSize;
                     break;
 
-                case 1: // "Г" образное препятствие (горизонтальное)
-                    width = 2 * SegmentSize; // Ширина 2 сегмента
-                    height = SegmentSize; // Высота 1 сегмент
+                case 1:
+                    width = 2 * SegmentSize;
+                    height = SegmentSize;
                     break;
 
-                case 2: // "Г" образное препятствие (вертикальное)
-                    width = SegmentSize; // Ширина 1 сегмент
-                    height = 2 * SegmentSize; // Высота 2 сегмента
+                case 2:
+                    width = SegmentSize;
+                    height = 2 * SegmentSize;
                     break;
 
                 default:
@@ -120,17 +139,20 @@ namespace SnakeOnDesktop
 
             do
             {
-                int x = random.Next(0, form.ClientSize.Width / SegmentSize) * SegmentSize; // Случайная позиция по горизонтали
-                int y = random.Next(0, (form.ClientSize.Height - height) / SegmentSize) * SegmentSize; // Случайная позиция по вертикали
+                int x = random.Next(0, form.ClientSize.Width / SegmentSize) * SegmentSize;
+                int y = random.Next(0, (form.ClientSize.Height - height) / SegmentSize) * SegmentSize;
                 obstaclePosition = new Point(x, y);
                 newObstacle = new Rectangle(obstaclePosition, new Size(width, height));
             } while (obstacles.Any(o => o.Bounds.IntersectsWith(newObstacle) ||
-                                        snake.Body.Any(segment => newObstacle.Contains(segment)))); // Проверяем на пересечение
+                                        snake.Body.Any(segment => newObstacle.Contains(segment))));
 
-            obstacles.Add(new Obstacle(obstaclePosition, new Size(width, height))); // Добавляем новое препятствие в список
+            obstacles.Add(new Obstacle(obstaclePosition, new Size(width, height)));
         }
 
-
+        /// <summary>
+        /// Рисует все игровые элементы на экране.
+        /// </summary>
+        /// <param name="g">Графический объект для отрисовки.</param>
         public void Draw(Graphics g)
         {
             foreach (var segment in snake.Body)
@@ -140,31 +162,25 @@ namespace SnakeOnDesktop
 
             g.FillRectangle(Brushes.Red, currentFood.Position.X, currentFood.Position.Y, SegmentSize, SegmentSize);
 
-
-            // Рисуем верхнюю часть портала
             if (portal != null)
             {
-                // Рисуем верхнюю часть
                 g.FillRectangle(Brushes.Blue, portal.Bounds.X, portal.Bounds.Y, portal.Bounds.Width, portal.Bounds.Height);
 
-                // Рисуем нижнюю часть
                 g.FillRectangle(Brushes.Blue, portal.BottomBounds.X, portal.BottomBounds.Y, portal.BottomBounds.Width, portal.BottomBounds.Height);
 
-                // Рисуем проход (не закрашиваем его)
                 Rectangle passageBounds = new Rectangle(portal.Bounds.X, portal.Bounds.Y + portal.Bounds.Height, portal.Bounds.Width, SegmentSize * 2);
-                g.FillRectangle(Brushes.Transparent, passageBounds); // Этот прямоугольник оставляем прозрачным
+                g.FillRectangle(Brushes.Transparent, passageBounds);
             }
 
             if (!isGameOver)
             {
-                string scoreText = $"Счёт: {score}";
+                string scoreText = $"                    Счёт: {score} \n Для выхода нажмите ESC \n Для перезапуска нажмите F1";
                 SizeF textSize = g.MeasureString(scoreText, scoreFont);
                 float xPosition = (SystemInformation.VirtualScreen.Width - textSize.Width) / 2;
                 g.DrawString(scoreText, scoreFont, Brushes.White, new PointF(xPosition, 10));
             }
             else
             {
-                // Отображение табло при завершении игры
                 string gameOverText = $"Игра окончена! Счёт: {score}\nНажмите R для рестарта";
                 SizeF gameOverSize = g.MeasureString(gameOverText, gameOverFont);
                 float xPosition = (form.ClientSize.Width - gameOverSize.Width) / 2;
@@ -173,14 +189,19 @@ namespace SnakeOnDesktop
             }
             foreach (var obstacle in obstacles)
             {
-                g.FillRectangle(Brushes.Gray, obstacle.Bounds); // Рисуем препятствие
+                g.FillRectangle(Brushes.Gray, obstacle.Bounds);
             }
             DrawLeaderboard(g);
         }
+
+        /// <summary>
+        /// Отрисовывает таблицу лидеров на экране.
+        /// </summary>
+        /// <param name="g">Графический объект для отрисовки.</param>
         private void DrawLeaderboard(Graphics g)
         {
             Font leaderboardFont = new Font("Arial", 16, FontStyle.Bold);
-            int startY = 50; // Начальная позиция по Y для лидерборда
+            int startY = 50;
 
             for (int i = 0; i < topEntries.Count; i++)
             {
@@ -188,6 +209,11 @@ namespace SnakeOnDesktop
                 g.DrawString(entryText, leaderboardFont, Brushes.White, new PointF(10, startY + (i * 20)));
             }
         }
+
+        /// <summary>
+        /// Обрабатывает нажатие клавиш для управления змейкой и игровым процессом.
+        /// </summary>
+        /// <param name="key">Клавиша, нажатая пользователем.</param>
         public void KeyDown(Keys key)
         {
             switch (key)
@@ -207,12 +233,20 @@ namespace SnakeOnDesktop
                 case Keys.R:
                     if (isGameOver) RestartGame();
                     break;
-                case Keys.Escape: // Обработка нажатия клавиши ESC
-                    if (!isGameOver) GameOver(); // Вызываем завершение игры
+                case Keys.F1:
+                    if (!isGameOver) GameOver();
+                    break;
+                case Keys.Escape:
+                    Application.Exit();
                     break;
             }
         }
 
+        /// <summary>
+        /// Проверяет, съел ли змейка еду. Если еда съедена, увеличивается счёт, 
+        /// змейка растёт, создаётся новая еда. Также создаётся портал при достижении определённого счёта 
+        /// и генерируются препятствия каждые 10 очков.
+        /// </summary>
         private void CheckForFood()
         {
             var head = snake.Body[0];
@@ -228,63 +262,57 @@ namespace SnakeOnDesktop
                 GenerateFood();
 
 
-                if (score == 10) // Проверяем, набрано ли 50 очков
+                if (score == 50)
                 {
                     CreatePortal();
                 }
 
-                if (score % 5 == 0 && score > 0) // Проверяем, набрано ли 10 очков
+                if (score % 10 == 0 && score > 0)
                 {
-                    GenerateObstacle(); // Генерируем новое препятствие
+                    GenerateObstacle();
                 }
-                if (score % 1 == 0 && score > 0) // Каждые 5 очков увеличиваем скорость
+                if (score % 10 == 0 && score > 0)
                 {
-                    int newInterval = (int)(gameTimer.Interval * 0.9); // Уменьшаем интервал на 10%
+                    int newInterval = (int)(gameTimer.Interval * 0.9);
 
-                    // Убедимся, что интервал не становится меньше минимального значения, например, 50 миллисекунд
                     gameTimer.Interval = Math.Max(newInterval, 1);
 
-                    Console.WriteLine($"Score: {score}, New Interval: {gameTimer.Interval}"); // Вывод текущего интервала
+                    Console.WriteLine($"Score: {score}, New Interval: {gameTimer.Interval}");
                 }
-
-
-
-
             }
         }
 
-
+        /// <summary>
+        /// Создаёт портал на игровом поле при достижении определённого счёта. 
+        /// Портал состоит из верхней и нижней частей, и его размеры подстраиваются 
+        /// в зависимости от размеров окна.
+        /// </summary>
         private void CreatePortal()
         {
-            // Устанавливаем позицию портала в центре экрана
             portalPositionX = (form.ClientSize.Width - PortalWidth) / 2;
 
-            // Высота портала от верхней границы экрана до середины, не доходя 1 сегмента
             int topPortalHeight = (form.ClientSize.Height / 2) - SegmentSize;
 
-            // Высота портала от нижней границы экрана до середины, не доходя 1 сегмента
             int bottomPortalHeight = (form.ClientSize.Height / 2) - SegmentSize;
 
-            // Создаем портал
             portal = new Portal(portalPositionX, PortalWidth, form.ClientSize.Height);
 
-            // Обновляем границы портала
-            portal.Bounds = new Rectangle(portalPositionX, 0, PortalWidth, topPortalHeight); // Верхняя часть портала
-            portal.PassageBounds = new Rectangle(portalPositionX, topPortalHeight, PortalWidth, SegmentSize * 2); // Проход в центре (2 сегмента в высоту)
+            portal.Bounds = new Rectangle(portalPositionX, 0, PortalWidth, topPortalHeight);
 
-            // Добавляем нижнюю часть портала
-            portal.BottomBounds = new Rectangle(portalPositionX, form.ClientSize.Height - bottomPortalHeight, PortalWidth, bottomPortalHeight); // Нижняя часть портала
+            portal.PassageBounds = new Rectangle(portalPositionX, topPortalHeight, PortalWidth, SegmentSize * 2);
+
+            portal.BottomBounds = new Rectangle(portalPositionX, form.ClientSize.Height - bottomPortalHeight, PortalWidth, bottomPortalHeight);
         }
 
-
-
-
+        /// <summary>
+        /// Проверяет столкновения головы змейки с границами окна, телом змейки, препятствиями, 
+        /// а также с порталом. Если происходит столкновение, игра заканчивается.
+        /// </summary>
         private void CheckCollisions()
         {
             var head = snake.Body.First();
             Rectangle headBounds = new Rectangle(head.X, head.Y, SegmentSize, SegmentSize);
 
-            // Проверка выхода за границы экрана
             if (head.X < 0)
             {
                 head.X = form.ClientSize.Width - SegmentSize;
@@ -299,13 +327,11 @@ namespace SnakeOnDesktop
             }
             else if (head.Y >= form.ClientSize.Height)
             {
-                head.Y = 0; // Появление сверху
+                head.Y = 0;
             }
 
-            // Проверка столкновения с верхней частью портала
             if (portal != null && headBounds.IntersectsWith(portal.Bounds))
             {
-                // Логика для телепортации в противоположную сторону
                 switch (snake.CurrentDirection)
                 {
                     case Direction.Right:
@@ -352,7 +378,6 @@ namespace SnakeOnDesktop
 
             snake.Body[0] = head;
 
-            // Проверка столкновения с телом змеи
             for (int i = 1; i < snake.Body.Count; i++)
             {
                 if (head == snake.Body[i])
@@ -361,7 +386,6 @@ namespace SnakeOnDesktop
                 }
             }
 
-            // Проверка столкновения с препятствиями
             foreach (var obstacle in obstacles)
             {
                 if (headBounds.IntersectsWith(obstacle.Bounds))
@@ -371,18 +395,20 @@ namespace SnakeOnDesktop
             }
         }
 
+        /// <summary>
+        /// Завершает игру. Останавливает таймер, воспроизводит звук окончания игры.
+        /// Если счёт игрока выше предыдущего максимального, обновляет данные в базе.
+        /// </summary>
         private void GameOver()
         {
             gameTimer.Stop();
             soundManager.PlayGameOverSound();
             isGameOver = true;
 
-            if (!string.IsNullOrEmpty(currentUsername)) // Используем более безопасную проверку
+            if (!string.IsNullOrEmpty(currentUsername))
             {
-                // Получаем текущий максимальный счет из базы данных
-                int maxScore = leaderboard.GetMaxScore(currentUsername); // Убедитесь, что метод существует
+                int maxScore = leaderboard.GetMaxScore(currentUsername);
 
-                // Если текущий счет больше, чем максимальный, обновляем в базе данных
                 if (score > maxScore)
                 {
                     dbManager.UpdateMaxScore(currentUsername, score);
@@ -400,8 +426,10 @@ namespace SnakeOnDesktop
             form.Invalidate();
         }
 
-
-
+        /// <summary>
+        /// Перезапускает игру, сбрасывает все параметры к начальному состоянию. 
+        /// Обнуляет счёт, создаёт новую змейку, очищает препятствия и заново генерирует еду.
+        /// </summary>
         private void RestartGame()
         {
             isGameOver = false;
@@ -412,6 +440,5 @@ namespace SnakeOnDesktop
             GenerateFood();
             gameTimer.Start();
         }
-
     }
 }

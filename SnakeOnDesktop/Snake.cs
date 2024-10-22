@@ -2,12 +2,12 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
 
 namespace SnakeOnDesktop
 {
+    /// <summary>
+    /// Представляет змею в игре, включая ее тело и направление движения.
+    /// </summary>
     public class Snake
     {
         public List<Point> Body { get; private set; }
@@ -15,14 +15,13 @@ namespace SnakeOnDesktop
 
         public Snake()
         {
-            // Начальная позиция змейки
             Body = new List<Point>
             {
-                new Point(500, 500), // Голова змейки
-                new Point(490, 500),  // Тело
-                new Point(480, 500)   // Тело
+                new Point(500, 500),
+                new Point(490, 500),
+                new Point(480, 500)
             };
-            CurrentDirection = Direction.Right; // По умолчанию движение вправо
+            CurrentDirection = Direction.Right;
         }
 
         public void Move()
@@ -33,28 +32,29 @@ namespace SnakeOnDesktop
             switch (CurrentDirection)
             {
                 case Direction.Up:
-                    newHead.Y -= 10; // Движение вверх
+                    newHead.Y -= 10;
                     break;
                 case Direction.Down:
-                    newHead.Y += 10; // Движение вниз
+                    newHead.Y += 10;
                     break;
                 case Direction.Left:
-                    newHead.X -= 10; // Движение влево
+                    newHead.X -= 10;
                     break;
                 case Direction.Right:
-                    newHead.X += 10; // Движение вправо
+                    newHead.X += 10;
                     break;
             }
-            // Добавляем новую голову и удаляем хвост
             Body.Insert(0, newHead);
             Body.RemoveAt(Body.Count - 1);
 
-            // Выводим координаты головы в консоль
             Console.WriteLine($"Координаты головы: {newHead.X}, {newHead.Y}");
         }
+
+        /// <summary>
+        /// Увеличивает длину змеи, добавляя новый сегмент в конец тела.
+        /// </summary>
         public void Grow()
         {
-            // Добавляем новый сегмент в тело змейки
             Point lastSegment = Body[Body.Count - 1];
             Body.Add(lastSegment);
         }

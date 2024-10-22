@@ -6,7 +6,7 @@ namespace SnakeOnDesktop
     internal static class Program
     {
         /// <summary>
-        /// The main entry point for the application.
+        /// Статический класс, содержащий точку входа в приложение.
         /// </summary>
         [STAThread]
         static void Main()
@@ -14,17 +14,14 @@ namespace SnakeOnDesktop
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
-            // Создаем и показываем LoginForm
             using (LoginForm loginForm = new LoginForm())
             {
-                if (loginForm.ShowDialog() == DialogResult.OK) // Проверяем, успешна ли аутентификация
+                if (loginForm.ShowDialog() == DialogResult.OK)
                 {
-                    // Запускаем основную форму, если вход успешен
-                    Application.Run(new Form1());
+                    Application.Run(new GameForm());
                 }
                 else
                 {
-                    // Если аутентификация не удалась, завершаем приложение
                     Application.Exit();
                 }
             }

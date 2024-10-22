@@ -5,15 +5,28 @@ using System.Threading.Tasks;
 
 namespace SnakeOnDesktop
 {
+    /// <summary>
+    /// Управляет взаимодействием с базой данных для игры "Змейка".
+    /// </summary>
     public class DatabaseManager
     {
         private string connectionString;
 
+        /// <summary>
+        /// Инициализирует новый экземпляр класса <see cref="DatabaseManager"/>.
+        /// </summary>
+        /// <param name="serverName">Имя сервера базы данных.</param>
+        /// <param name="databaseName">Имя базы данных.</param>
         public DatabaseManager(string serverName, string databaseName)
         {
             connectionString = $"Server={serverName};Database={databaseName};Trusted_Connection=True; Connect Timeout=60;";
         }
 
+        /// <summary>
+        /// Проверяет, существует ли пользователь с указанным именем в базе данных.
+        /// </summary>
+        /// <param name="username">Имя пользователя для проверки.</param>
+        /// <returns>Возвращает true, если пользователь существует; в противном случае false.</returns>
         public bool UserExists(string username)
         {
             using (SqlConnection connection = new SqlConnection(connectionString))
@@ -24,41 +37,17 @@ namespace SnakeOnDesktop
                 using (SqlCommand command = new SqlCommand(query, connection))
                 {
                     command.Parameters.AddWithValue("@Username", username);
-                    int count = (int)command.ExecuteScalar(); 
+                    int count = (int)command.ExecuteScalar();
                     return count > 0;
                 }
             }
         }
 
-        public async Task<List<LeaderboardEntry>> GetTopEntriesAsync(int count)
-        {
-            var entries = new List<LeaderboardEntry>();
-
-            using (SqlConnection connection = new SqlConnection(connectionString))
-            {
-                await connection.OpenAsync();
-                string query = "SELECT TOP(@Count) Username, MaxScore FROM Leaderboard ORDER BY MaxScore DESC";
-                using (SqlCommand command = new SqlCommand(query, connection))
-                {
-                    command.Parameters.AddWithValue("@Count", count);
-
-                    using (SqlDataReader reader = await command.ExecuteReaderAsync())
-                    {
-                        while (await reader.ReadAsync())
-                        {
-                            entries.Add(new LeaderboardEntry
-                            {
-                                Username = reader.GetString(0),
-                                MaxScore = reader.GetInt32(1)
-                            });
-                        }
-                    }
-                }
-            }
-
-            return entries;
-        }
-
+        /// <summary>
+        /// Вставляет нового игрока в таблицу Leaderboard с начальным максимальным счетом.
+        /// </summary>
+        /// <param name="username">Имя пользователя, которого нужно вставить.</param>
+        /// <param name="maxScore">Начальный максимальный счет для пользователя.</param>
         public void InsertPlayer(string username, int maxScore)
         {
             using (SqlConnection connection = new SqlConnection(connectionString))
@@ -75,6 +64,11 @@ namespace SnakeOnDesktop
             }
         }
 
+        /// <summary>
+        /// Обновляет максимальный счет для указанного пользователя, если новый счет больше текущего.
+        /// </summary>
+        /// <param name="username">Имя пользователя, для которого нужно обновить максимальный счет.</param>
+        /// <param name="newMaxScore">Новый максимальный счет.</param>
         public void UpdateMaxScore(string username, int newMaxScore)
         {
             using (SqlConnection connection = new SqlConnection(connectionString))
@@ -99,9 +93,5 @@ namespace SnakeOnDesktop
                 }
             }
         }
-
-
-
-
     }
 }
