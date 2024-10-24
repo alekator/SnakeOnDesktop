@@ -40,7 +40,7 @@
 ## Installation
 1. **Cloning the Repository:**
    ```bash
-   git clone https://github.com/username/SnakeOnDesktop.git
+    git clone https://github.com/username/SnakeOnDesktop.git
    ```
 ## Building the Project:
 - Open the project in Visual Studio.
